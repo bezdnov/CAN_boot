@@ -1,0 +1,13 @@
+Файлы, из которых произрастает загрузчик
+optiboot.c
+link_optiboot.ld
+
+"boot_opt.h"
+
+"pin_defs.h"
+
+"stk500.h"
+содержит команды стк
+
+#include "pins_rs485.h"
+#include "pins_softuart.h"
