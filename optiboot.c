@@ -535,7 +535,6 @@ void uartDelay() __attribute__ ((naked));
 /* These definitions are NOT zero initialised, but that doesn't matter */
 /* This allows us to drop the zero init code, saving us memory */
 static addr16_t buff = {(uint8_t *)(RAMSTART)};
-
 /* Virtual boot partition support */
 #ifdef VIRTUAL_BOOT_PARTITION
 
@@ -601,6 +600,211 @@ static addr16_t buff = {(uint8_t *)(RAMSTART)};
 
 #endif // VIRTUAL_BOOT_PARTITION
 
+
+// Here are standart definitions from arduino
+
+#define HIGH 0x1
+#define LOW  0x0
+
+#define INPUT 0x0
+#define OUTPUT 0x1
+#define INPUT_PULLUP 0x2
+
+#define NOT_ON_TIMER 0
+#define TIMER0A 1
+#define TIMER0B 2
+#define TIMER1A 3
+#define TIMER1B 4
+#define TIMER1C 5
+#define TIMER2  6
+#define TIMER2A 7
+#define TIMER2B 8
+
+#define TIMER3A 9
+#define TIMER3B 10
+#define TIMER3C 11
+#define TIMER4A 12
+#define TIMER4B 13
+#define TIMER4C 14
+#define TIMER4D 15
+#define TIMER5A 16
+#define TIMER5B 17
+#define TIMER5C 18
+
+#define NOT_A_PIN 0
+#define NOT_A_PORT 0
+
+#define NOT_AN_INTERRUPT -1
+
+#define SPI_MODE0 0x00
+#define SPI_MODE1 0x04
+#define SPI_MODE2 0x08
+#define SPI_MODE3 0x0C
+
+#define SPI_MODE_MASK 0x0C  // CPOL = bit 3, CPHA = bit 2 on SPCR
+#define SPI_CLOCK_MASK 0x03  // SPR1 = bit 1, SPR0 = bit 0 on SPCR
+#define SPI_2XCLOCK_MASK 0x01  // SPI2X = bit 0 on SPSR
+
+#define LSBFIRST 0
+#define MSBFIRST 1
+
+#define PB 0
+#define PD 8
+#define PC 14
+
+// I force bootloader into usage of additional section used for constants
+#define OPTFLASHSECT __attribute__((section(".fini8")))
+
+OPTFLASHSECT const uint16_t port_to_mode_PGM[] = {
+	NOT_A_PORT,
+	NOT_A_PORT,
+	(uint16_t) &DDRB,
+	(uint16_t) &DDRC,
+	(uint16_t) &DDRD,
+};
+
+OPTFLASHSECT const uint16_t port_to_output_PGM[] = {
+	NOT_A_PORT,
+	NOT_A_PORT,
+	(uint16_t) &PORTB,
+	(uint16_t) &PORTC,
+	(uint16_t) &PORTD,
+};
+
+OPTFLASHSECT const uint16_t port_to_input_PGM[] = {
+	NOT_A_PORT,
+	NOT_A_PORT,
+	(uint16_t) &PINB,
+	(uint16_t) &PINC,
+	(uint16_t) &PIND,
+};
+
+
+OPTFLASHSECT const uint8_t digital_pin_to_port_PGM[] = {
+	PD, /* 0 */
+	PD,
+	PD,
+	PD,
+	PD,
+	PD,
+	PD,
+	PD,
+	PB, /* 8 */
+	PB,
+	PB,
+	PB,
+	PB,
+	PB,
+	PC, /* 14 */
+	PC,
+	PC,
+	PC,
+	PC,
+	PC,
+};
+
+OPTFLASHSECT const uint8_t digital_pin_to_bit_mask_PGM[] = {
+	_BV(0), /* 0, port D */
+	_BV(1),
+	_BV(2),
+	_BV(3),
+	_BV(4),
+	_BV(5),
+	_BV(6),
+	_BV(7),
+	_BV(0), /* 8, port B */
+	_BV(1),
+	_BV(2),
+	_BV(3),
+	_BV(4),
+	_BV(5),
+	_BV(0), /* 14, port C */
+	_BV(1),
+	_BV(2),
+	_BV(3),
+	_BV(4),
+	_BV(5),
+};
+
+
+OPTFLASHSECT const uint8_t digital_pin_to_timer_PGM[] = {
+	NOT_ON_TIMER, /* 0 - port D */
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+	// on the ATmega168, digital pin 3 has hardware pwm
+#if defined(__AVR_ATmega8__)
+	NOT_ON_TIMER,
+#else
+	TIMER2B,
+#endif
+	NOT_ON_TIMER,
+	// on the ATmega168, digital pins 5 and 6 have hardware pwm
+#if defined(__AVR_ATmega8__)
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+#else
+	TIMER0B,
+	TIMER0A,
+#endif
+	NOT_ON_TIMER,
+	NOT_ON_TIMER, /* 8 - port B */
+	TIMER1A,
+	TIMER1B,
+#if defined(__AVR_ATmega8__)
+	TIMER2,
+#else
+	TIMER2A,
+#endif
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+	NOT_ON_TIMER, /* 14 - port C */
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+	NOT_ON_TIMER,
+};
+
+#define digitalPinToPort(P) ( pgm_read_byte( digital_pin_to_port_PGM + (P) ) )
+#define digitalPinToBitMask(P) ( pgm_read_byte( digital_pin_to_bit_mask_PGM + (P) ) )
+#define digitalPinToTimer(P) ( pgm_read_byte( digital_pin_to_timer_PGM + (P) ) )
+#define analogInPinToBit(P) (P)
+#define portOutputRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_output_PGM + (P))) )
+#define portInputRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_input_PGM + (P))) )
+#define portModeRegister(P) ( (volatile uint8_t *)( pgm_read_word( port_to_mode_PGM + (P))) )
+
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
+
+
+// this comes from avr/interrupt.h
+#define sei()  __asm__ __volatile__ ("sei" ::: "memory")
+#define cli()  __asm__ __volatile__ ("cli" ::: "memory")
+
+#define noInterrupts() cli()
+#define interrupts() sei()
+
+static uint8_t interruptMode; // 0=none, 1=mask, 2=global
+static uint8_t interruptSave; // temp storage, to restore state
+
+// static uint8_t glob_spcr;
+// static uint8_t glob_spsr;
+
+// Keeping variables in RAM. 
+// A very weird way of declaration of global variables. These are stored in RAM
+#define glob_spcr (*(volatile uint8_t*)(RAMSTART + 0x02))
+#define glob_spsr (*(volatile uint8_t*)(RAMSTART + 0x03))
+
+
+// defaults
+#define SCK 13
+#define SS 10
+#define MOSI 11
+
 void sectionOpts() __attribute__((naked));
 void sectionOpts() {
 /*
@@ -629,8 +833,8 @@ void sectionOpts() {
    * flash size that they are defined to occupy (1k)
    */
   asm(" .global __BOOT_SIZE__, __BOOT_START__, __VERSION_START__\n"
-      " .equ __BOOT_SIZE__, 1024\n"
-      " .equ __BOOT_START__, (%0-1023)\n"
+      " .equ __BOOT_SIZE__, 2048\n"   // This place was redacted; now BOOT SIZE is 2Kb
+      " .equ __BOOT_START__, (%0-2047)\n" // this was also redacted
       " .equ __VERSION_START__, (%0-1)\n"
       ::"i"((uint32_t)FLASHEND));
 #else
@@ -919,6 +1123,8 @@ int main(void) {
 #endif
 #endif
 
+  // TODO: initialize SPI to test it
+
   /* Forever loop: exits by causing WDT reset */
   for (;;) {
     /* get character from UART */
@@ -933,10 +1139,8 @@ int main(void) {
        */
       if (which == STK_SW_MINOR) {
 	putch(optiboot_version & 0xFF);
-	// putch(1);
       } else if (which == STK_SW_MAJOR) {
         putch(optiboot_version >> 8);
-	// putch(1);
       } else {
         /*
          * GET PARAMETER returns a generic 0x03 reply for
@@ -1615,6 +1819,381 @@ static void do_spm(uint16_t address, uint8_t command, uint16_t data) {
 }
 #endif
 
+// Here I realise the functions, that are needed to bootload by transmitting packets via CAN(MCP2515)
+// The code here are copied from:
+// wiring_digital.c (from Arduino core)
+// SPI.h/SPI.cpp
+// CAN library
+
+
+// copied from arduino std library
+static void turnOffPWM(uint8_t timer)
+{
+	switch (timer)
+	{
+		#if defined(TCCR1A) && defined(COM1A1)
+		case TIMER1A:   cbi(TCCR1A, COM1A1);    break;
+		#endif
+		#if defined(TCCR1A) && defined(COM1B1)
+		case TIMER1B:   cbi(TCCR1A, COM1B1);    break;
+		#endif
+		#if defined(TCCR1A) && defined(COM1C1)
+		case TIMER1C:   cbi(TCCR1A, COM1C1);    break;
+		#endif
+		
+		#if defined(TCCR2) && defined(COM21)
+		case  TIMER2:   cbi(TCCR2, COM21);      break;
+		#endif
+		
+		#if defined(TCCR0A) && defined(COM0A1)
+		case  TIMER0A:  cbi(TCCR0A, COM0A1);    break;
+		#endif
+		
+		#if defined(TCCR0A) && defined(COM0B1)
+		case  TIMER0B:  cbi(TCCR0A, COM0B1);    break;
+		#endif
+		#if defined(TCCR2A) && defined(COM2A1)
+		case  TIMER2A:  cbi(TCCR2A, COM2A1);    break;
+		#endif
+		#if defined(TCCR2A) && defined(COM2B1)
+		case  TIMER2B:  cbi(TCCR2A, COM2B1);    break;
+		#endif
+		
+		#if defined(TCCR3A) && defined(COM3A1)
+		case  TIMER3A:  cbi(TCCR3A, COM3A1);    break;
+		#endif
+		#if defined(TCCR3A) && defined(COM3B1)
+		case  TIMER3B:  cbi(TCCR3A, COM3B1);    break;
+		#endif
+		#if defined(TCCR3A) && defined(COM3C1)
+		case  TIMER3C:  cbi(TCCR3A, COM3C1);    break;
+		#endif
+
+		#if defined(TCCR4A) && defined(COM4A1)
+		case  TIMER4A:  cbi(TCCR4A, COM4A1);    break;
+		#endif					
+		#if defined(TCCR4A) && defined(COM4B1)
+		case  TIMER4B:  cbi(TCCR4A, COM4B1);    break;
+		#endif
+		#if defined(TCCR4A) && defined(COM4C1)
+		case  TIMER4C:  cbi(TCCR4A, COM4C1);    break;
+		#endif			
+		#if defined(TCCR4C) && defined(COM4D1)
+		case TIMER4D:	cbi(TCCR4C, COM4D1);	break;
+		#endif			
+			
+		#if defined(TCCR5A)
+		case  TIMER5A:  cbi(TCCR5A, COM5A1);    break;
+		case  TIMER5B:  cbi(TCCR5A, COM5B1);    break;
+		case  TIMER5C:  cbi(TCCR5A, COM5C1);    break;
+		#endif
+	}
+}
+
+void pinMode(uint8_t pin, uint8_t mode) {
+	uint8_t bit = digitalPinToBitMask(pin);
+	uint8_t port = digitalPinToPort(pin);
+	volatile uint8_t *reg, *out;
+
+	if (port == NOT_A_PIN) return;
+
+	// JWS: can I let the optimizer do this?
+	reg = portModeRegister(port);
+	out = portOutputRegister(port);
+
+	if (mode == INPUT) { 
+		uint8_t oldSREG = SREG;
+                cli();
+		*reg &= ~bit;
+		*out &= ~bit;
+		SREG = oldSREG;
+	} else if (mode == INPUT_PULLUP) {
+		uint8_t oldSREG = SREG;
+                cli();
+		*reg &= ~bit;
+		*out |= bit;
+		SREG = oldSREG;
+	} else {
+		uint8_t oldSREG = SREG;
+                cli();
+		*reg |= bit;
+		SREG = oldSREG;
+	}
+}
+
+void digitalWrite(uint8_t pin, uint8_t val) {
+	uint8_t timer = digitalPinToTimer(pin);   /// !!!!
+	uint8_t bit = digitalPinToBitMask(pin);   /// !!!!!
+	uint8_t port = digitalPinToPort(pin);     /// !!!!!
+	volatile uint8_t *out;
+
+	if (port == NOT_A_PIN) return;
+
+	// If the pin that support PWM output, we need to turn it off
+	// before doing a digital write.
+	if (timer != NOT_ON_TIMER) turnOffPWM(timer);
+
+	out = portOutputRegister(port); // !!!!!
+
+	uint8_t oldSREG = SREG;
+	cli();
+
+	if (val == LOW) {
+		*out &= ~bit;
+	} else {
+		*out |= bit;
+	}
+
+	SREG = oldSREG;
+}
+
+// Slowest configuration for CAN is used
+void SPI_settingsInit() {
+	// used configuration: 
+	uint32_t clock = 8E6;
+	uint8_t bitOrder = MSBFIRST;
+	// this strings is the same as uint8_t dataMode = SPI_MODE0;
+	uint8_t dataMode = 0;
+	// Clock settings are defined as follows. Note that this shows SPI2X
+    // inverted, so the bits form increasing numbers. Also note that
+    // fosc/64 appears twice
+    // SPR1 SPR0 ~SPI2X Freq
+    //   0    0     0   fosc/2
+    //   0    0     1   fosc/4
+    //   0    1     0   fosc/8
+    //   0    1     1   fosc/16
+    //   1    0     0   fosc/32
+    //   1    0     1   fosc/64
+    //   1    1     0   fosc/64
+    //   1    1     1   fosc/128
+
+    // We find the fastest clock that is less than or equal to the
+    // given clock rate. The clock divider that results in clock_setting
+    // is 2 ^^ (clock_div + 1). If nothing is slow enough, we'll use the
+    // slowest (128 == 2 ^^ 7, so clock_div = 6).
+    uint8_t clockDiv;
+
+    // When the clock is known at compile time, use this if-then-else
+    // cascade, which the compiler knows how to completely optimize
+    // away. When clock is not known, use a loop instead, which generates
+    // shorter code.
+    // so, this is better by speed
+
+    // we optimize code size, so this isn't needed
+    // if (__builtin_constant_p(clock)) {
+    //   if (clock >= F_CPU / 2) {
+    //     clockDiv = 0;
+    //   } else if (clock >= F_CPU / 4) {
+    //     clockDiv = 1;
+    //   } else if (clock >= F_CPU / 8) {
+    //     clockDiv = 2;
+    //   } else if (clock >= F_CPU / 16) {
+    //     clockDiv = 3;
+    //   } else if (clock >= F_CPU / 32) {
+    //     clockDiv = 4;
+    //   } else if (clock >= F_CPU / 64) {
+    //     clockDiv = 5;
+    //   } else {
+    //     clockDiv = 6;
+    //   }
+    // } else 
+    
+    // this is better by code size
+    uint32_t clockSetting = F_CPU / 2;
+    clockDiv = 0;
+    while (clockDiv < 6 && clock < clockSetting) {
+    	clockSetting /= 2;
+    	clockDiv++;
+    }
+
+    // Compensate for the duplicate fosc/64
+    if (clockDiv == 6)
+    clockDiv = 7;
+
+    // Invert the SPI2X bit
+    clockDiv ^= 0x1;
+
+    // Pack into the SPISettings class
+    // filling the spcr/spsr wars
+
+
+    glob_spcr = _BV(SPE) | _BV(MSTR) | ((bitOrder == LSBFIRST) ? _BV(DORD) : 0) | (dataMode & SPI_MODE_MASK) | ((clockDiv >> 1) & SPI_CLOCK_MASK);
+    glob_spsr = clockDiv & SPI_2XCLOCK_MASK;
+}
+
+/* 
+ * here I realise analogs for SPI functions
+ * they are 1) copied 2) redacted to reduce size (I removed ) 
+*/
+
+// analog for SPI.begin()
+// SS - D10 - PB2
+// MOSI - D11 - PB3
+// MISO - D12 - PB4
+// SCK - D13 - PB5
+
+// uint8_t 
+void SPI_setup() {
+	uint8_t sreg = SREG;
+	// noInterrupts(); // Protect from a scheduler and prevent transactionBegin
+	cli();
+	
+	// Set SS to high so a connected chip will be "deselected" by default
+	
+	
+	// digitalPinToPort(P) ( pgm_read_byte( digital_pin_to_port_PGM + (P) )
+	uint8_t port = digitalPinToPort(SS);
+	// digitalPinToBitMask(P) ( pgm_read_byte( digital_pin_to_bit_mask_PGM + (P) ) )
+	uint8_t bit = digitalPinToBitMask(SS);
+	
+	// portModeRegister(P) ( (volatile uint8_t*) ( pgm_read_word( digital_pin_to_bit_mask_PGM + (P) ) ) )
+	volatile uint8_t *reg = portModeRegister(port);
+
+	// if the SS pin is not already configured as an output
+	// then set it high (to enable the internal pull-up resistor)
+	if (!(*reg & bit)){
+
+		// very long !!!
+		digitalWrite(SS, HIGH);
+	}
+	// When the SS pin is set as OUTPUT, it can be used as
+	// a general purpose output port (it doesn't influence
+	// SPI operations).
+	//
+	// pinMode !!! very long
+	pinMode(SS, OUTPUT);
+		
+	// Warning: if the SS pin ever becomes a LOW INPUT then SPI
+	// automatically switches to Slave, so the data direction of
+	// the SS pin MUST be kept as OUTPUT.
+	// MSTR <=> Master
+	SPCR |= _BV(MSTR);
+	// SPE <=> enable spi hardware
+	SPCR |= _BV(SPE);
+
+    	// Set direction register for SCK and MOSI pin.
+    	// MISO pin automatically overrides to INPUT.
+    	// By doing this AFTER enabling SPI, we avoid accidentally
+    	// clocking in a single bit since the lines go directly
+    	// from "input" to SPI control.
+    	// http://code.google.com/p/arduino/issues/detail?id=888
+    	// Наш МК - источник для часов (или типо того),
+    	// Ну и наш МК мастер получается (?)
+	pinMode(SCK, OUTPUT);
+	pinMode(MOSI, OUTPUT);
+
+	SREG = sreg;
+}
+
+// analog for SPI.end()
+// vars initialized, interruptMode are not needed and thus removed
+void SPI_destruct() {
+	uint8_t sreg = SREG;
+	noInterrupts(); // Protect from a scheduler and prevent transactionBegin
+
+	// we don't use init var
+	// Decrease the reference counter
+	// if (initialized)
+	// initialized--;
+
+	// If there are no more references disable SPI
+
+	// disabling SPI
+	// if (!initialized) {
+	SPCR &= ~_BV(SPE);
+	// interruptMode = 0;
+	#ifdef SPI_TRANSACTION_MISMATCH_LED
+	inTransactionFlag = 0;
+	#endif
+  // }
+	SREG = sreg;
+}
+
+uint8_t SPI_transfer(uint8_t data) {
+	SPDR = data;
+    asm volatile("nop");
+    while (!(SPSR & _BV(SPIF))) ; // wait
+    return SPDR;
+}
+
+void SPI_beginTransaction()
+{
+	// SPISettings not used
+	if (interruptMode > 0) {
+		uint8_t sreg = SREG;
+		noInterrupts();
+
+		#ifdef SPI_AVR_EIMSK
+		if (interruptMode == 1) {
+			interruptSave = SPI_AVR_EIMSK;
+			SPI_AVR_EIMSK &= ~interruptMask;
+			SREG = sreg;
+		} else
+		#endif
+		{
+			interruptSave = sreg;
+		}
+	}
+
+	#ifdef SPI_TRANSACTION_MISMATCH_LED
+	if (inTransactionFlag) {
+		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
+		digitalWrite(SPI_TRANSACTION_MISMATCH_LED, HIGH);
+	}
+	inTransactionFlag = 1;
+	#endif
+
+	// Might be not needed
+	SPCR = glob_spcr;
+	SPSR = glob_spsr;
+}
+
+void SPI_endTransaction() {
+	#ifdef SPI_TRANSACTION_MISMATCH_LED
+	if (!inTransactionFlag) {
+		pinMode(SPI_TRANSACTION_MISMATCH_LED, OUTPUT);
+		digitalWrite(SPI_TRANSACTION_MISMATCH_LED, HIGH);
+	}
+	inTransactionFlag = 0;
+	#endif
+
+	if (interruptMode > 0) {
+		#ifdef SPI_AVR_EIMSK
+		uint8_t sreg = SREG;
+		#endif
+		noInterrupts();
+		#ifdef SPI_AVR_EIMSK
+		if (interruptMode == 1) {
+			SPI_AVR_EIMSK = interruptSave;
+			SREG = sreg;
+		} else
+		#endif
+		{
+			SREG = interruptSave;
+		}
+	}
+}
+// sends 8 bytes of data by can
+void CAN_sendPacket() {
+
+}
+
+// analog for CAN.begin()  (mcp2515 version)
+// does following things:
+// initializes MCP2515 at speed (&&&&&&&)
+void CAN_begin() {
+
+}
+
+// analog for Can.parsePacket()
+void parsePacket() {
+
+}
+
+// analog for CAN.sendPacket
+void sendPacket() {
+
+}
 
 
 #if BIGBOOT
@@ -1632,12 +2211,16 @@ static void do_spm(uint16_t address, uint8_t command, uint16_t data) {
  * This can always be removed or trimmed if more actual program space
  * is needed in the future.  Currently the data occupies about 160 bytes,
  */
+
 #define xstr(s) str(s)
 #define str(s) #s
 
 __attribute__((section(".fini9"))) const char f_delimit = 0xFF;
 
+// I use constants in CAN-BOOT, so ifndef was added here
+#ifndef OPTFLASHSECT
 #define OPTFLASHSECT __attribute__((section(".fini8")))
+#endif
 #define OPT2FLASH(o) OPTFLASHSECT const char f##o[] = #o "=" xstr(o)
 
 

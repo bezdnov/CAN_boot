@@ -1,1 +1,4 @@
 all_unneeded/
+optiboot_atmega328.*
+optiboot.o
+baudcheck.tmp.sh
